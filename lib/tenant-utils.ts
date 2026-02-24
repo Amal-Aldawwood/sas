@@ -67,6 +67,9 @@ export function getTenantFullUrl(subdomain: string, path: string = ''): string {
   return productionUrl;
 }
 
+// Import the mock data functions
+import { findTenantBySubdomain } from './mock-data';
+
 /**
  * Utility to validate if a tenant exists
  * 
@@ -77,12 +80,41 @@ export async function validateTenantExists(subdomain: string): Promise<boolean> 
   try {
     console.log(`[TENANT-UTILS] Validating tenant: ${subdomain}`);
     
-    // Call the tenant-info API to check if the tenant exists
-    const response = await fetch(`/api/${subdomain}/auth/tenant-info`);
-    const exists = response.ok;
+    // Use the mock data directly instead of making API calls
+    // This is more reliable for local development
+    const tenant = findTenantBySubdomain(subdomain);
+    const exists = !!tenant;
     
     console.log(`[TENANT-UTILS] Tenant validation result for ${subdomain}: ${exists}`);
-    return exists;
+    
+    // If the tenant exists in mock data, return true immediately
+    if (exists) {
+      return true;
+    }
+    
+    // For direct access patterns (e.g., direct-access-clinr)
+    // Extract tenant name if it has a prefix
+    const directAccessPrefixes = ['direct-access-'];
+    const hasPrefix = directAccessPrefixes.some(prefix => subdomain.startsWith(prefix));
+    
+    if (hasPrefix) {
+      // Find the matching prefix
+      const prefix = directAccessPrefixes.find(p => subdomain.startsWith(p));
+      if (prefix) {
+        // Extract the actual tenant subdomain
+        const actualSubdomain = subdomain.substring(prefix.length);
+        console.log(`[TENANT-UTILS] Checking direct access subdomain: ${actualSubdomain}`);
+        
+        // Check if the actual subdomain exists
+        const actualTenant = findTenantBySubdomain(actualSubdomain);
+        const actualExists = !!actualTenant;
+        
+        console.log(`[TENANT-UTILS] Direct access tenant validation for ${actualSubdomain}: ${actualExists}`);
+        return actualExists;
+      }
+    }
+    
+    return false;
   } catch (error) {
     console.error(`[TENANT-UTILS] Error validating tenant ${subdomain}:`, error);
     return false;

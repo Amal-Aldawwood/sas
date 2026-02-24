@@ -42,12 +42,32 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <Link 
-                href="/admin/tenants/create"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Add New Client
-              </Link>
+              <div className="flex space-x-4">
+                <Link 
+                  href="/direct-access-clinr"
+                  className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
+                >
+                  Clinr Direct Access
+                </Link>
+                <Link 
+                  href="/no-auth-tenant-create"
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                >
+                  Create Client (No Auth)
+                </Link>
+                <Link 
+                  href="/admin-create-tenant"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Add New Client
+                </Link>
+                <Link 
+                  href="/admin/tenants/create"
+                  className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                >
+                  Legacy Add Client
+                </Link>
+              </div>
             </div>
             
             <div className="bg-white shadow overflow-hidden rounded-lg">

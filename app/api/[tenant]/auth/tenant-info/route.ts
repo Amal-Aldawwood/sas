@@ -7,9 +7,24 @@ export async function GET(
 ) {
   try {
     // Get tenant subdomain from route parameter
-    const { tenant: subdomain } = params;
+    let { tenant: subdomain } = params;
     
     console.log(`[DEBUG] Tenant API called with subdomain: ${subdomain}`);
+    
+    // Check for direct access pattern
+    const directAccessPrefixes = ['direct-access-'];
+    const isDirectAccess = directAccessPrefixes.some(prefix => subdomain.startsWith(prefix));
+    
+    if (isDirectAccess) {
+      // Find the matching prefix
+      const prefix = directAccessPrefixes.find(p => subdomain.startsWith(p));
+      if (prefix) {
+        // Extract the actual tenant subdomain
+        const actualSubdomain = subdomain.substring(prefix.length);
+        console.log(`[DEBUG] Direct access pattern detected. Original: ${subdomain}, Actual: ${actualSubdomain}`);
+        subdomain = actualSubdomain;
+      }
+    }
     
     // Fetch tenant information from our mock data
     const tenant = findTenantBySubdomain(subdomain);

@@ -48,6 +48,19 @@ export default function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     
+    // Special handling for admin tenant pages
+    if (path.startsWith('/admin/tenants/')) {
+      const segments = path.split('/').filter(Boolean);
+      console.log(`[MIDDLEWARE] Admin tenants path detected: ${segments.join('/')}`);
+      
+      // Ensure proper rewrite for tenant create/edit pages
+      if (segments.length >= 3) {
+        // Let Next.js handle this path using the correct app directory structure
+        console.log(`[MIDDLEWARE] Allowing tenant management path: ${path}`);
+        return NextResponse.next();
+      }
+    }
+    
     // Allow all other admin paths to pass through without tenant validation
     console.log('[MIDDLEWARE] Admin path - allowing access without auth check');
     return NextResponse.next();
@@ -63,26 +76,56 @@ export default function middleware(request: NextRequest) {
     console.log(`[MIDDLEWARE] Path segments:`, segments);
     
     if (segments[0] === 'tenant' && segments.length > 1) {
-      const tenantSubdomain = segments[1];
-      const remainingPath = segments.slice(2).join('/') || 'dashboard';
-      
-      console.log(`[MIDDLEWARE] Tenant path detected: ${tenantSubdomain}, remainingPath: ${remainingPath}`);
-      
-      // Rewrite to the correct customer route
-      // We need to use the correct Next.js app directory format
-      url.pathname = `/${tenantSubdomain}/${remainingPath}`;
-      console.log(`[MIDDLEWARE] Rewriting to: ${url.pathname}`);
-      return NextResponse.rewrite(new URL(url.pathname, request.url));
+      // Allow this route to be handled by the tenant redirector
+      // This route is used from the client creation page to redirect users
+      // to their new client dashboard
+      console.log(`[MIDDLEWARE] Tenant redirector path detected: ${segments.join('/')}`);
+      return NextResponse.next();
     }
     
+    // Special handling for direct dashboard access without a tenant context
+    if (path === '/dashboard') {
+      console.log('[MIDDLEWARE] Dashboard root path accessed - redirecting to admin dashboard');
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+
+    // List of common page names that should not be treated as tenant subdomains
+    const commonPageNames = [
+      'dashboard', 'login', 'register', 'settings', 'profile', 'users',
+      'admin-test', 'simplified-create-tenant', 'test-admin-route',
+      'create', 'edit', 'delete', 'view', 'favicon.ico'
+    ];
+    
+    // Custom path prefixes for direct tenant access
+    const directAccessPrefixes = [
+      'direct-access-'
+    ];
+
     // Handle direct access to tenant routes with the subdomain as the first segment
-    // Format: /{tenantSubdomain}/dashboard
-    if (segments.length > 0 && !['admin', 'api', '_next'].includes(segments[0])) {
-      const potentialTenantSubdomain = segments[0];
+    // Format: /{tenantSubdomain}/dashboard or direct-access-{tenantSubdomain}
+    if (segments.length > 0 && 
+       !['admin', 'api', '_next', 'tenant'].includes(segments[0]) && 
+       !commonPageNames.includes(segments[0])) {
+      
+      // Check for direct access pattern (direct-access-{tenant})
+      const isDirect = directAccessPrefixes.some(prefix => segments[0].startsWith(prefix));
+      
+      let potentialTenantSubdomain;
+      if (isDirect) {
+        // Extract tenant name from prefix (e.g., direct-access-clinr → clinr)
+        const prefix = directAccessPrefixes.find(p => segments[0].startsWith(p)) || '';
+        potentialTenantSubdomain = segments[0].substring(prefix.length);
+        console.log(`[MIDDLEWARE] Direct access tenant detected: ${potentialTenantSubdomain}`);
+      } else {
+        potentialTenantSubdomain = segments[0];
+      }
+      
       const remainingPath = segments.slice(1).join('/') || 'dashboard';
       
       // Try to rewrite to the tenant route - the tenant layout will handle verification
       url.pathname = `/${potentialTenantSubdomain}/${remainingPath}`;
+      console.log(`[MIDDLEWARE] Potential tenant path detected, rewriting to: ${url.pathname}`);
       return NextResponse.rewrite(new URL(url.pathname, request.url));
     }
   }

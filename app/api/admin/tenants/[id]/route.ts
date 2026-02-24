@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockTenants } from '@/lib/mock-data';
+import { mockTenants, updateTenant } from '@/lib/mock-data';
 
 // GET - Get a tenant by ID
 export async function GET(
@@ -37,35 +37,62 @@ export async function PATCH(
 ) {
   try {
     const id = params.id;
-    console.log(`[ADMIN-TENANT-API] Updating tenant with ID: ${id}`);
+    console.log(`[ADMIN-TENANT-API] Updating tenant with ID: ${id} via PATCH`);
     
     const body = await request.json();
     
-    // Find tenant in mock data
-    const tenantIndex = mockTenants.findIndex(t => t.id === id);
+    // Update tenant in mock data
+    const updatedTenant = updateTenant(id, body);
     
-    if (tenantIndex === -1) {
+    if (!updatedTenant) {
       return NextResponse.json(
         { message: 'Tenant not found' },
         { status: 404 }
       );
     }
     
-    // In a real application, this would update the tenant in the database
-    // For our mock data, we'll just return a success message
+    return NextResponse.json({
+      message: 'Tenant updated successfully',
+      tenant: updatedTenant
+    });
+  } catch (error: any) {
+    console.error('[ADMIN-TENANT-API] Error updating tenant:', error);
+    return NextResponse.json(
+      { message: error.message || 'Error updating tenant' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT - Update a tenant by ID (alias for PATCH)
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const id = params.id;
+    console.log(`[ADMIN-TENANT-API] Updating tenant with ID: ${id} via PUT`);
+    
+    const body = await request.json();
+    
+    // Update tenant in mock data
+    const updatedTenant = updateTenant(id, body);
+    
+    if (!updatedTenant) {
+      return NextResponse.json(
+        { message: 'Tenant not found' },
+        { status: 404 }
+      );
+    }
     
     return NextResponse.json({
       message: 'Tenant updated successfully',
-      tenant: {
-        ...mockTenants[tenantIndex],
-        ...body,
-        updatedAt: new Date()
-      }
+      tenant: updatedTenant
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[ADMIN-TENANT-API] Error updating tenant:', error);
     return NextResponse.json(
-      { message: 'Error updating tenant' },
+      { message: error.message || 'Error updating tenant' },
       { status: 500 }
     );
   }

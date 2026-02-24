@@ -52,19 +52,42 @@ export default function TenantLayout({
           pathname
         }));
         
+        // Check for direct access pattern
+        let tenantSubdomain = params.tenant;
+        const directAccessPrefixes = ['direct-access-'];
+        const isDirectAccess = directAccessPrefixes.some(prefix => tenantSubdomain.startsWith(prefix));
+        
+        if (isDirectAccess) {
+          // Find the matching prefix
+          const prefix = directAccessPrefixes.find(p => tenantSubdomain.startsWith(p));
+          if (prefix) {
+            // Extract the actual tenant subdomain
+            const actualSubdomain = tenantSubdomain.substring(prefix.length);
+            console.log(`[TENANT-LAYOUT] Direct access pattern detected. Original: ${tenantSubdomain}, Actual: ${actualSubdomain}`);
+            tenantSubdomain = actualSubdomain;
+            setDebugInfo((prev: DebugInfo) => ({
+              ...prev,
+              directAccessDetected: true,
+              originalParam: params.tenant,
+              extractedSubdomain: actualSubdomain
+            }));
+          }
+        }
+        
         // Validate tenant exists before proceeding
-        const tenantExists = await validateTenantExists(params.tenant);
+        const tenantExists = await validateTenantExists(tenantSubdomain);
         
         if (!tenantExists) {
-          console.error(`[TENANT-LAYOUT] Tenant validation failed for: ${params.tenant}`);
+          console.error(`[TENANT-LAYOUT] Tenant validation failed for: ${tenantSubdomain}`);
           setDebugInfo((prev: DebugInfo) => ({...prev, validationFailed: true}));
           setError("Tenant not found");
           setLoading(false);
           return;
         }
         
-        // Construct API URL for tenant info
-        const apiUrl = `/api/${params.tenant}/auth/tenant-info`;
+        // Construct API URL for tenant info - use the cleaned subdomain 
+        // (without direct-access prefix if present)
+        const apiUrl = `/api/${tenantSubdomain}/auth/tenant-info`;
         console.log(`[TENANT-LAYOUT] API URL: ${apiUrl}`);
         setDebugInfo((prev: DebugInfo) => ({...prev, apiUrl}));
         

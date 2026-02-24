@@ -4,14 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function CreateTenant() {
+export default function NoAuthTenantCreate() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     subdomain: "",
     primaryColor: "#FF6B00",
     secondaryColor: "#0066FF",
-    logoUrl: "", // In a real app, this would be file upload
+    logoUrl: "",
     adminEmail: "",
     adminPassword: "",
     adminName: ""
@@ -20,7 +20,6 @@ export default function CreateTenant() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  // New state to store tenant info for link
   const [createdTenant, setCreatedTenant] = useState<{name: string, link: string} | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,12 +35,11 @@ export default function CreateTenant() {
     setCreatedTenant(null);
     
     try {
-      // Validate required company fields
+      // Validate required fields
       if (!formData.name || !formData.subdomain) {
         throw new Error("Company name and subdomain are required");
       }
       
-      // Validate required admin account fields
       if (!formData.adminEmail || !formData.adminPassword || !formData.adminName) {
         throw new Error("Admin name, email, and password are required");
       }
@@ -52,12 +50,12 @@ export default function CreateTenant() {
         throw new Error("Please enter a valid email address");
       }
       
-      // Validate subdomain format (letters, numbers, hyphens only)
+      // Validate subdomain format
       if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
         throw new Error("Subdomain must contain only lowercase letters, numbers, and hyphens");
       }
       
-      // Validate password strength (minimum 8 characters)
+      // Validate password strength
       if (formData.adminPassword.length < 8) {
         throw new Error("Password must be at least 8 characters long");
       }
@@ -79,8 +77,8 @@ export default function CreateTenant() {
       
       // Create tenant link for different environments
       const tenantLink = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')
-        ? `/tenant/${formData.subdomain}/dashboard` // Local development format
-        : `https://${formData.subdomain}.${window.location.hostname.split('.').slice(1).join('.')}/dashboard`; // Production format
+        ? `/tenant/${formData.subdomain}/dashboard`
+        : `https://${formData.subdomain}.${window.location.hostname.split('.').slice(1).join('.')}/dashboard`;
       
       // Store created tenant info
       setCreatedTenant({
@@ -105,7 +103,7 @@ export default function CreateTenant() {
         adminName: ""
       });
       
-      // Redirect after a delay to allow user to see the success message
+      // Redirect after a delay
       setTimeout(() => {
         router.push("/admin/dashboard");
       }, 5000);
@@ -120,13 +118,28 @@ export default function CreateTenant() {
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-3xl mx-auto py-10 px-4 sm:px-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Add New Client</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Add New Client (No Auth Required)</h1>
           <Link
-            href="/admin/dashboard"
+            href="/"
             className="px-3 py-1 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
           >
-            Back to Dashboard
+            Back to Home
           </Link>
+        </div>
+        
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                This page bypasses authentication for testing purposes. In a production environment, this would require admin login.
+              </p>
+            </div>
+          </div>
         </div>
         
         {error && (
@@ -337,7 +350,7 @@ export default function CreateTenant() {
               <div className="pt-5">
                 <div className="flex justify-end">
                   <Link
-                    href="/admin/dashboard"
+                    href="/"
                     className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
                     Cancel
